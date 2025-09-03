@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Subir Facturas</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="container">
+        <h1>Subir Factura a S3</h1>
+        <input type="file" id="fileInput" />
+        <button onclick="uploadFile()">Subir</button>
+        <div id="notification"></div>
+    </div>
+
+    <script>
+        async function uploadFile() {
+            const file = document.getElementById("fileInput").files[0];
+            const notification = document.getElementById("notification");
+            const backendUrl = "https://backend-facturass3.onrender.com"
+
+            if (!file) {
+                showNotification("Selecciona un archivo primero", "error");
+                return;
+            }
+
+            try {
+                const response = await fetch(`${backendUrl}/get-presigned-url?fileName=${file.name}&fileType=${file.type}`);
+                const upload = await fetch(url, {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": file.type,
+                    },
+                    body: file
+                });
+
+                const data = await res.json();
+
+                if (data.error) {
+                    showNotification("❌ " + data.error, "error");
+                    return;
+                }
+
+                await fetch(data.url, {
+                    method: "PUT",
+                    body: file,
+                    headers: { "Content-Type": file.type }
+                });
+
+                showNotification("✅ Factura subida exitosamente 🚀", "success");
+            } catch (err) {
+                showNotification("❌ Error al subir la factura", "error");
+            }
+        }
+
+        function showNotification(message, type) {
+            const notification = document.getElementById("notification");
+            notification.textContent = message;
+            notification.className = type;
+            notification.style.display = "block";
+
+            // Se oculta automáticamente después de 3s
+            setTimeout(() => {
+                notification.style.display = "none";
+            }, 3000);
+        }
+    </script>
+</body>
+
+</html>
