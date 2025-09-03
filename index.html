@@ -19,7 +19,7 @@
         async function uploadFile() {
             const file = document.getElementById("fileInput").files[0];
             const notification = document.getElementById("notification");
-            const backendUrl = "https://backend-facturass3.onrender.com"
+            const backend_url = "https://backend-facturass3.onrender.com"
 
             if (!file) {
                 showNotification("Selecciona un archivo primero", "error");
@@ -27,7 +27,7 @@
             }
 
             try {
-                const response = await fetch(`${backendUrl}/get-presigned-url?fileName=${file.name}&fileType=${file.type}`);
+                const response = await fetch(`${backend_url}/get-presigned-url?fileName=${file.name}&fileType=${file.type}`);
                 const data = await response.json();
 
                 if (data.error) {
