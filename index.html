@@ -28,15 +28,7 @@
 
             try {
                 const response = await fetch(`${backendUrl}/get-presigned-url?fileName=${file.name}&fileType=${file.type}`);
-                const upload = await fetch(url, {
-                    method: "PUT",
-                    headers: {
-                        "Content-Type": file.type,
-                    },
-                    body: file
-                });
-
-                const data = await res.json();
+                const data = await response.json();
 
                 if (data.error) {
                     showNotification("❌ " + data.error, "error");
@@ -51,6 +43,7 @@
 
                 showNotification("✅ Factura subida exitosamente 🚀", "success");
             } catch (err) {
+                console.error(err);
                 showNotification("❌ Error al subir la factura", "error");
             }
         }
