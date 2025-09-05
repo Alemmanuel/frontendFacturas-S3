@@ -11,37 +11,38 @@
     <div class="container">
         <h1>Subir Factura a S3</h1>
         <input type="file" id="fileInput" accept="image/*" />
-        <!-- Added image preview container -->
-        <div id="imagePreview" class="preview-container" style="display: none;">
-            <img id="previewImg" alt="Vista previa" />
-            <p class="preview-text">Vista previa de la imagen</p>
+        <div id="previewContainer">
+            <img id="previewImage" src="" alt="Vista previa"
+                style="display:none; max-width:400px; max-height:400px; margin:10px auto; border-radius:6px; border:1px solid #ccc; display:block;" />
         </div>
         <button onclick="uploadFile()">Subir</button>
         <div id="notification"></div>
     </div>
 
     <script>
-        document.getElementById("fileInput").addEventListener("change", function(event) {
-            const file = event.target.files[0];
-            const previewContainer = document.getElementById("imagePreview");
-            const previewImg = document.getElementById("previewImg");
+        const fileInput = document.getElementById("fileInput");
+        const previewImage = document.getElementById("previewImage");
 
+        // Mostrar la vista previa de la imagen
+        fileInput.addEventListener("change", () => {
+            const file = fileInput.files[0];
             if (file && file.type.startsWith("image/")) {
                 const reader = new FileReader();
-                reader.onload = function(e) {
-                    previewImg.src = e.target.result;
-                    previewContainer.style.display = "block";
+                reader.onload = (e) => {
+                    previewImage.src = e.target.result;
+                    previewImage.style.display = "block";
                 };
                 reader.readAsDataURL(file);
             } else {
-                previewContainer.style.display = "none";
+                previewImage.style.display = "none";
+                previewImage.src = "";
             }
         });
 
         async function uploadFile() {
-            const file = document.getElementById("fileInput").files[0];
+            const file = fileInput.files[0];
             const notification = document.getElementById("notification");
-            const backendUrl = "https://tu-app-backend.onrender.com"
+            const backend_url = "https://backend-facturass3.onrender.com";
 
             if (!file) {
                 showNotification("Selecciona un archivo primero", "error");
@@ -49,7 +50,7 @@
             }
 
             try {
-                const response = await fetch(`${backendUrl}/get-presigned-url?fileName=${file.name}&fileType=${file.type}`);
+                const response = await fetch(`${backend_url}/get-presigned-url?fileName=${file.name}&fileType=${file.type}`);
                 const data = await response.json();
 
                 if (data.error) {
@@ -64,8 +65,6 @@
                 });
 
                 showNotification("✅ Factura subida exitosamente 🚀", "success");
-                document.getElementById("imagePreview").style.display = "none";
-                document.getElementById("fileInput").value = "";
             } catch (err) {
                 console.error(err);
                 showNotification("❌ Error al subir la factura", "error");
@@ -78,7 +77,6 @@
             notification.className = type;
             notification.style.display = "block";
 
-            // Se oculta automáticamente después de 3s
             setTimeout(() => {
                 notification.style.display = "none";
             }, 3000);
