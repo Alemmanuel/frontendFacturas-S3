@@ -53,3 +53,27 @@ button:hover {
   color: #721c24;
   border: 1px solid #f5c6cb;
 }
+
+/* Added styles for image preview functionality */
+.preview-container {
+  margin: 15px 0;
+  padding: 15px;
+  border: 2px dashed #007bff;
+  border-radius: 8px;
+  text-align: center;
+  background-color: #f8f9fa;
+}
+
+#previewImg {
+  max-width: 100%;
+  max-height: 300px;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.preview-text {
+  margin-top: 10px;
+  color: #666;
+  font-size: 14px;
+  font-style: italic;
+}
