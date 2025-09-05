@@ -2,86 +2,129 @@
 <html lang="es">
 
 <head>
-    <meta charset="UTF-8">
-    <title>Subir Facturas</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8">
+  <title>Subir Facturas</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    #facturaInfo {
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      background: #f9f9f9;
+    }
+
+    #facturaInfo table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    #facturaInfo th,
+    #facturaInfo td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+    }
+
+    #facturaInfo th {
+      background: #f1f1f1;
+    }
+  </style>
 </head>
 
 <body>
-    <div class="container">
-        <h1>Subir Factura a S3</h1>
-        <input type="file" id="fileInput" accept="image/*" />
-        <div id="previewContainer">
-            <img id="previewImage" src="" alt="Vista previa"
-                style="display:none; max-width:400px; max-height:400px; margin:10px auto; border-radius:6px; border:1px solid #ccc; display:block;" />
-        </div>
-        <button onclick="uploadFile()">Subir</button>
-        <div id="notification"></div>
+  <div class="container">
+    <h1>Subir Factura</h1>
+    <input type="file" id="fileInput" accept="image/*,.pdf" />
+
+    <!-- Vista previa -->
+    <div id="previewContainer">
+      <img id="previewImage" src="" alt="Vista previa"
+        style="display:none; max-width:200px; max-height:200px; margin:10px auto; border-radius:6px; border:1px solid #ccc; display:block;" />
     </div>
 
-    <script>
-        const fileInput = document.getElementById("fileInput");
-        const previewImage = document.getElementById("previewImage");
+    <button onclick="uploadAndExtract()">Subir y Extraer</button>
 
-        // Mostrar la vista previa de la imagen
-        fileInput.addEventListener("change", () => {
-            const file = fileInput.files[0];
-            if (file && file.type.startsWith("image/")) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    previewImage.src = e.target.result;
-                    previewImage.style.display = "block";
-                };
-                reader.readAsDataURL(file);
-            } else {
-                previewImage.style.display = "none";
-                previewImage.src = "";
-            }
+    <div id="notification"></div>
+    <div id="facturaInfo"></div>
+  </div>
+
+  <script>
+    const backend_url = "https://backend-facturass3.onrender.com";
+    const fileInput = document.getElementById("fileInput");
+    const previewImage = document.getElementById("previewImage");
+
+    // Vista previa
+    fileInput.addEventListener("change", () => {
+      const file = fileInput.files[0];
+      if (file && file.type.startsWith("image/")) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          previewImage.src = e.target.result;
+          previewImage.style.display = "block";
+        };
+        reader.readAsDataURL(file);
+      } else {
+        previewImage.style.display = "none";
+        previewImage.src = "";
+      }
+    });
+
+    async function uploadAndExtract() {
+      const file = fileInput.files[0];
+      if (!file) {
+        showNotification("Selecciona un archivo primero", "error");
+        return;
+      }
+
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        // Enviar al backend para OCR
+        const response = await fetch(`${backend_url}/extract-factura`, {
+          method: "POST",
+          body: formData
         });
 
-        async function uploadFile() {
-            const file = fileInput.files[0];
-            const notification = document.getElementById("notification");
-            const backend_url = "https://backend-facturass3.onrender.com";
+        const facturaData = await response.json();
+        renderFacturaInfo(facturaData);
 
-            if (!file) {
-                showNotification("Selecciona un archivo primero", "error");
-                return;
-            }
+      } catch (err) {
+        console.error(err);
+        showNotification("❌ Error en el proceso", "error");
+      }
+    }
 
-            try {
-                const response = await fetch(`${backend_url}/get-presigned-url?fileName=${file.name}&fileType=${file.type}`);
-                const data = await response.json();
+    function renderFacturaInfo(data) {
+      const container = document.getElementById("facturaInfo");
+      if (!data || data.error) {
+        container.innerHTML = "<p>No se pudo extraer información.</p>";
+        return;
+      }
 
-                if (data.error) {
-                    showNotification("❌ " + data.error, "error");
-                    return;
-                }
+      container.innerHTML = `
+        <h3>Información extraída:</h3>
+        <table>
+          <tr><th>Número de Factura</th><td>${data.numero_factura || "No detectado"}</td></tr>
+          <tr><th>Fecha</th><td>${data.fecha || "No detectado"}</td></tr>
+          <tr><th>Cliente</th><td>${data.cliente || "No detectado"}</td></tr>
+          <tr><th>Total</th><td>${data.total || "No detectado"}</td></tr>
+        </table>
+      `;
+    }
 
-                await fetch(data.url, {
-                    method: "PUT",
-                    body: file,
-                    headers: { "Content-Type": file.type }
-                });
+    function showNotification(message, type) {
+      const notification = document.getElementById("notification");
+      notification.textContent = message;
+      notification.className = type;
+      notification.style.display = "block";
 
-                showNotification("✅ Factura subida exitosamente 🚀", "success");
-            } catch (err) {
-                console.error(err);
-                showNotification("❌ Error al subir la factura", "error");
-            }
-        }
-
-        function showNotification(message, type) {
-            const notification = document.getElementById("notification");
-            notification.textContent = message;
-            notification.className = type;
-            notification.style.display = "block";
-
-            setTimeout(() => {
-                notification.style.display = "none";
-            }, 3000);
-        }
-    </script>
+      setTimeout(() => {
+        notification.style.display = "none";
+      }, 3000);
+    }
+  </script>
 </body>
 
 </html>
